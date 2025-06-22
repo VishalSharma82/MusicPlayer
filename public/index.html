@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎶 Sync Music Player</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="container">
+    <h1>🔊 Sync Music Player</h1>
+
+    <div class="card">
+      <!-- Room Join -->
+      <input type="text" id="roomInput" placeholder="Enter Room ID" />
+      <button onclick="joinRoom()">🚪 Join Room</button>
+
+      <!-- Player UI -->
+      <div id="player" style="display:none;">
+        <!-- Upload Section -->
+        <h3>📤 Upload a Song</h3>
+        <div class="upload-box">
+          <label for="fileInput" class="file-label">🎼 Choose a Song</label>
+          <input type="file" id="fileInput" accept="audio/*" hidden />
+          <span id="fileName">No file selected</span>
+          <button onclick="uploadSong()">⬆️ Upload</button>
+        </div>
+
+        <!-- Current Song -->
+        <div class="song-title">🎵 Now Playing: <span id="currentSongName">None</span></div>
+        <audio id="audio" controls></audio>
+
+        <!-- Controls -->
+        <div class="controls">
+          <button onclick="prevSong()">⏮</button>
+          <button onclick="togglePlayPause()">⏯</button>
+          <button onclick="nextSong()">⏭</button>
+        </div>
+
+        <!-- Volume -->
+        <div class="volume-control">
+          <label for="volume">🔊 Volume</label>
+          <input type="range" id="volume" min="0" max="1" step="0.01" value="1" onchange="adjustVolume(this.value)" />
+        </div>
+
+        <!-- Library -->
+        <h3>🎵 Song Library</h3>
+        <ul id="songList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Message -->
+  <div id="toast" class="toast hidden">Message</div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

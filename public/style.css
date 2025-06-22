@@ -1,0 +1,109 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to right, #1f1c2c, #928dab);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.container {
+  text-align: center;
+  width: 90%;
+  max-width: 500px;
+}
+
+h1 {
+  margin-bottom: 20px;
+  font-size: 2rem;
+}
+
+.card {
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+input[type="text"], input[type="file"] {
+  padding: 10px;
+  width: 80%;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  font-size: 1rem;
+  background-color: #00c9ff;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #92fe9d;
+}
+
+.controls button {
+  font-size: 24px;
+  margin: 5px;
+  padding: 10px 15px;
+}
+
+.volume-control {
+  margin: 15px 0;
+}
+
+.song-title {
+  margin: 10px 0;
+  font-weight: bold;
+}
+
+#songList {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+}
+
+#songList li {
+  background: rgba(255,255,255,0.2);
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  padding: 12px 20px;
+  color: white;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.toast.show {
+  opacity: 1;
+}
+#songList li span:last-child {
+  color: #ff6b6b;
+  font-size: 1.2rem;
+}
+#songList li span:last-child:hover {
+  color: red;
+  transform: scale(1.1);
+}
