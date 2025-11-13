@@ -1,11 +1,10 @@
-// public/script.js
-
 const socket = io();
 let roomId = null;
 let userId = null;
 let songList = [];
 let currentIndex = 0;
 let isPlaying = false;
+let isSeekingLocally = false; // 🔧 Added flag to prevent seek glitches
 
 // DOM Elements
 const audio = document.getElementById("audio");
@@ -20,7 +19,6 @@ const fileInput = document.getElementById("fileInput");
 const fileNameSpan = document.getElementById("fileName");
 
 // --- Utility Functions ---
-
 function showToast(message) {
   const toast = document.getElementById("toast");
   toast.textContent = message;
@@ -39,7 +37,6 @@ function adjustVolume(val) {
 }
 
 // --- Authentication & Initialization ---
-
 function checkLoginStatus() {
   fetch("/user")
     .then((res) => {
@@ -47,7 +44,7 @@ function checkLoginStatus() {
       return res.json();
     })
     .then((data) => {
-      userId = data.user.id; // Google ID
+      userId = data.user.id;
       userNameDisplay.textContent = `Hello, ${data.user.name}!`;
       authSection.style.display = "none";
       logoutBtn.style.display = "block";
@@ -64,7 +61,6 @@ function checkLoginStatus() {
     });
 }
 
-// Check status on load and check hash for post-login redirect
 checkLoginStatus();
 
 function joinRoom() {
@@ -79,7 +75,6 @@ function joinRoom() {
 }
 
 // --- Player Functions ---
-
 function uploadSong() {
   const file = fileInput.files[0];
   if (!file) return showToast("Select a song to upload");
@@ -93,7 +88,7 @@ function uploadSong() {
     body: formData,
   })
     .then((res) => res.json())
-    .then((data) => {
+    .then(() => {
       showToast("✅ Song uploaded");
       fileInput.value = "";
       fileNameSpan.textContent = "No file selected";
@@ -155,7 +150,7 @@ function deleteSong(song) {
       if (res.status === 401) throw new Error("Unauthorized");
       return res.json();
     })
-    .then((data) => {
+    .then(() => {
       showToast("🗑️ Song deleted");
       fetchSongs();
     })
@@ -168,7 +163,6 @@ function loadSong(index) {
   audio.src = `/uploads/${filename}`;
   currentSongName.textContent = filename;
 
-  // Update active highlight
   document
     .querySelectorAll("#songList li")
     .forEach((li) => li.classList.remove("playing"));
@@ -178,7 +172,6 @@ function loadSong(index) {
 }
 
 // --- Sync Control Logic ---
-
 function togglePlayPause() {
   if (!roomId || songList.length === 0)
     return showToast("Join a room with uploaded songs first.");
@@ -192,7 +185,6 @@ function togglePlayPause() {
 function nextSong() {
   if (!roomId || songList.length === 0) return;
   currentIndex = (currentIndex + 1) % songList.length;
-  // Client loads song and sends control to others
   loadSong(currentIndex);
   syncControl("next", 0, currentIndex);
 }
@@ -200,7 +192,6 @@ function nextSong() {
 function prevSong() {
   if (!roomId || songList.length === 0) return;
   currentIndex = (currentIndex - 1 + songList.length) % songList.length;
-  // Client loads song and sends control to others
   loadSong(currentIndex);
   syncControl("prev", 0, currentIndex);
 }
@@ -214,24 +205,53 @@ function syncControl(
   socket.emit("control", { roomId, action, index, currentTime });
 }
 
-// Event to re-sync if a user manually seeks (drags the slider)
-audio.addEventListener("seeked", () => {
-  // Only send seek command if we are playing or recently played
-  if (!audio.paused || audio.currentTime > 0) {
-    syncControl("seek", audio.currentTime);
+// --- Smooth Seeking (Final Stable Fix) ---
+let seekTimeout = null;
+let isDragging = false;
+
+// Detect when user is dragging
+audio.addEventListener("mousedown", () => {
+  isDragging = true;
+  isSeekingLocally = true;
+  if (seekTimeout) clearTimeout(seekTimeout);
+});
+
+// Detect when user releases the mouse after dragging
+audio.addEventListener("mouseup", () => {
+  if (isDragging) {
+    isDragging = false;
+    // wait 300ms to ensure user finished dragging
+    seekTimeout = setTimeout(() => {
+      syncControl("seek", audio.currentTime);
+      isSeekingLocally = false;
+    }, 300);
   }
 });
 
-// Auto-play next song on end
+// Handle mobile (touch)
+audio.addEventListener("touchstart", () => {
+  isDragging = true;
+  isSeekingLocally = true;
+  if (seekTimeout) clearTimeout(seekTimeout);
+});
+
+audio.addEventListener("touchend", () => {
+  if (isDragging) {
+    isDragging = false;
+    seekTimeout = setTimeout(() => {
+      syncControl("seek", audio.currentTime);
+      isSeekingLocally = false;
+    }, 300);
+  }
+});
+
+// --- Auto-play next song ---
 audio.addEventListener("ended", () => {
-  // Check if the current song is the last in the list, if so, stop/loop
-  // For this example, we just go to the next song
   nextSong();
 });
 
 // --- CORE SYNCHRONIZATION HANDLER ---
-
-const SEEK_THRESHOLD = 0.75; // Max drift allowed (0.75 seconds)
+const SEEK_THRESHOLD = 0.75; // Max drift allowed (seconds)
 
 socket.on("sync-state", (state) => {
   const {
@@ -241,23 +261,23 @@ socket.on("sync-state", (state) => {
     lastUpdateTime,
   } = state;
 
+
   // 1. Song Change Check
   if (currentSongIndex !== currentIndex) {
     loadSong(currentSongIndex);
   }
 
-  // 2. Time Correction (Precise Sync Logic)
+  // 2. Time Correction
   let expectedTime = remoteCurrentTime;
   if (remoteIsPlaying) {
-    // Calculate drift: add the time elapsed since the server sent the update
     const timeSinceUpdate = (Date.now() - lastUpdateTime) / 1000;
     expectedTime = remoteCurrentTime + timeSinceUpdate;
   }
 
   const drift = Math.abs(audio.currentTime - expectedTime);
 
-  // Only attempt seek if the player has enough data to play smoothly
-  if (drift > SEEK_THRESHOLD && audio.readyState >= 3) {
+  // ⏱️ Prevent glitch while seeking
+  if (!isSeekingLocally && drift > SEEK_THRESHOLD && audio.readyState >= 3) {
     audio.currentTime = expectedTime;
     console.log(
       `⏱️ Corrected time: ${expectedTime.toFixed(2)}s (Drift: ${drift.toFixed(
@@ -269,13 +289,13 @@ socket.on("sync-state", (state) => {
   // 3. Play/Pause State
   isPlaying = remoteIsPlaying;
   if (remoteIsPlaying && audio.paused) {
-    // Attempt to play, catching the error if browser blocks auto-play
     audio
       .play()
-      .catch((e) =>
+      .catch(() =>
         console.log("Auto-play blocked, please interact with the player.")
       );
   } else if (!remoteIsPlaying && !audio.paused) {
     audio.pause();
   }
 });
+
