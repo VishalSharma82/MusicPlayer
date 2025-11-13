@@ -3,19 +3,34 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
-"scripts": {
-  "start": "node server.js",
-  "test": "echo \"Error: no test specified\" && exit 1"
-}
-,
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "multer": "^2.0.1",
+    "express-session": "^1.18.2",
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
+    "multer": "^2.0.2",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "path": "^0.12.7",
     "socket.io": "^4.8.1"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VishalSharma82/MusicPlayer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VishalSharma82/MusicPlayer/issues"
+  },
+  "homepage": "https://github.com/VishalSharma82/MusicPlayer#readme"
 }
