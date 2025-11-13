@@ -35,7 +35,7 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback" 
+    callbackURL: "https://musicplayer-07bb.onrender.com/auth/google/callback" 
 },
 function(accessToken, refreshToken, profile, done) {
     // In a real app, you would save this user to a database (e.g., MongoDB, PostgreSQL)
